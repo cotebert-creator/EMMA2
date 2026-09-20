@@ -122,3 +122,4 @@ app.post('/api/reply', express.json({limit:'24kb'}), async (req, res) => {
   }
 });
 app.listen(port,host,()=>console.log(`Emma Web POC running at http://localhost:${port}`));
+export default app;
