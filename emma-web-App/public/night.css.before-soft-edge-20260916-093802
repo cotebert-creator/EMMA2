@@ -1,0 +1,56 @@
+/* Soft flowing Emma, in both palettes. Audio still controls the parent scale. */
+.orb{border:0;background:radial-gradient(ellipse at 45% 42%,#fff0cbb0 0%,#fbc2a488 35%,#eaa0c04a 62%,#eaa0c000 75%);box-shadow:0 0 48px #ffcbaa55,inset 0 0 36px #ffdfbe33;border-radius:47% 53% 49% 51%;}
+.orb-core{inset:-2%;opacity:.55;background:radial-gradient(ellipse at 32% 35%,#ffe9c28c,transparent 60%),conic-gradient(from 0deg,transparent,#f4b6d570,transparent,#ffdab75e,transparent);filter:blur(8px);box-shadow:none;border-radius:45% 55% 60% 40% / 55% 43% 57% 45%;animation:soft-flow 17s ease-in-out infinite alternate;}
+.orb:before{inset:-13%;border-color:#ffd8dc55;background:conic-gradient(from 40deg,transparent,#f2b5d65c,transparent,#ffdda255,transparent);filter:blur(2px);box-shadow:0 0 24px #f8b5ce33;animation:soft-flow 23s ease-in-out infinite alternate;}
+.orb:after{inset:-25%;border-color:#f5c7eb40;filter:blur(3px);box-shadow:0 0 25px #eab3d833;animation:soft-flow 29s ease-in-out infinite alternate-reverse;}
+@keyframes soft-flow{0%{rotate:-15deg;border-radius:44% 56% 60% 40% / 48% 42% 58% 52%;transform:scale(.97)}50%{border-radius:58% 42% 48% 52% / 43% 58% 42% 57%}100%{rotate:35deg;border-radius:48% 52% 41% 59% / 58% 46% 54% 42%;transform:scale(1.06)}}
+.cloud-layer{inset:-16%;animation:visible-cloud-drift 48s ease-in-out -12s infinite alternate;}
+.cloud-veil{background-image:url('/assets/emma-clouds.png');background-size:cover;background-position:65% 55%;opacity:.16;mix-blend-mode:screen;mask-image:linear-gradient(transparent 5%,#0008 45%,#000 90%);animation:near-cloud-drift 65s ease-in-out -24s infinite alternate;}
+@keyframes visible-cloud-drift{from{transform:translate(-4%,1%) scale(1.02)}to{transform:translate(4%,-3%) scale(1.08)}}
+@keyframes near-cloud-drift{from{transform:translate(5%,2%) scale(1.09)}to{transform:translate(-5%,-2%) scale(1.02)}}
+.theme-button{background:#ffffff10;border:1px solid #ffffff50;border-radius:24px;color:inherit;padding:8px 14px;min-height:44px;margin-right:12px;font-size:13px;backdrop-filter:blur(10px)}
+:root[data-theme="night"]{color-scheme:dark;--card:#15223be8;--ink:#d0d9e9;--muted:#aab9cf;--line:#b0c7ee26;--accent:#9eafcb;--shadow:0 18px 55px #0003;}
+[data-theme="night"] body{background:#0b1428;color:#ced8e9}
+[data-theme="night"] .sky{background:#0b1428}
+[data-theme="night"] .cloud-layer,[data-theme="night"] .cloud-veil{background-image:url('/assets/emma-night-clouds.png')}
+[data-theme="night"] .sky:after{background:linear-gradient(#070e2033,#07102422 40%,#07102066)}
+[data-theme="night"] .orb{background:radial-gradient(ellipse at 43% 40%,#c2d4ed9c,#91a9d070 36%,#7795ca30 64%,transparent 76%);box-shadow:0 0 42px #7699d333,inset 0 0 28px #b7c9e322;}
+[data-theme="night"] .orb-core{background:radial-gradient(ellipse at 35% 35%,#d3dded77,transparent 55%),conic-gradient(transparent,#8eaee766,transparent,#bac9ed55,transparent);opacity:.55}
+[data-theme="night"] .orb:before,[data-theme="night"] .orb:after{border-color:#a1bce744;background:conic-gradient(from 40deg,transparent,#809ddc44,transparent,#c0cfeb44,transparent);box-shadow:0 0 26px #7596cb22;}
+[data-theme="night"] #voiceHint,[data-theme="night"] .emma-subtitle,[data-theme="night"] .listening-label,[data-theme="night"] .hero .muted,[data-theme="night"] .hero .ghost{color:#b5c3d9;text-shadow:none}
+[data-theme="night"] .patient-wave{filter:drop-shadow(0 0 4px #9caee755)}[data-theme="night"] .patient-wave path{stroke:#b4c9e4}[data-theme="night"] .patient-wave path:nth-child(2){stroke:#8d9fc7}[data-theme="night"] .patient-wave path:nth-child(3){stroke:#a2a7d1}
+[data-theme="night"] .conversation-controls button,[data-theme="night"] .conversation-controls #talkToggle,[data-theme="night"] .settings-button,[data-theme="night"] .theme-button{background:#23355366;border-color:#8a9dbf55;color:#c7d3e5}
+[data-theme="night"] .hero .pill{color:#b5c4dc;background:#23355266}
+[data-theme="night"] .care-drawer{background:#0e1a2e;color:#ced8e9}[data-theme="night"] .care-drawer .card{background:#15223b;border-color:#a8bbd91a}
+[data-theme="night"] .care-drawer .muted,[data-theme="night"] .care-drawer .ghost{color:#aab9cf}
+[data-theme="night"] .care-drawer .credit-details,[data-theme="night"] .loop,[data-theme="night"] .memory-item,[data-theme="night"] pre{background:#1a2a43;color:#c5d0e3}
+[data-theme="night"] .care-drawer .tabs{background:#18253a}[data-theme="night"] .tab.active{background:#2b3b54;color:#d4ddec}
+[data-theme="night"] input,[data-theme="night"] #journeySearch,[data-theme="night"] .backup-panel input,[data-theme="night"] .hero .type-box input{background:#17253c;color:#d2dbeb;border-color:#7f96b64d}
+[data-theme="night"] .primary,[data-theme="night"] .secondary{background:#354b6d;color:#dce3ef}
+[data-theme="night"] .notice,[data-theme="night"] .hero .notice{background:#1b2c46;border-color:#839fc655;color:#cdd8e9}
+[data-theme="night"] .care-drawer a{color:#a9c4e7}[data-theme="night"] footer{color:#99aac3}
+@media(prefers-reduced-motion:reduce){.cloud-layer,.cloud-veil,.orb-core,.orb:before,.orb:after{animation:none!important}}
+.low-energy .orb-core{animation:none}
+
+/* Daytime Emma: distinct golden sphere inside the soft moving rose aura. */
+[data-theme="day"] .orb{
+  border:2px solid #fff5cc;
+  border-radius:50%;
+  background:radial-gradient(circle at 46% 43%,#fffef0 0%,#fff4ba 12%,#ffd283 36%,#f3ad94 60%,#ec9ba7 75%,#ffe7b0 93%,#fff9dc 100%);
+  box-shadow:inset 0 0 22px #fff5c5b3,0 0 12px #fff3bf,0 0 34px #ffd78caa,0 0 68px #ffbca15e,0 12px 80px #9b48743d;
+}
+[data-theme="day"] .orb-core{
+  inset:7%;border-radius:50%;opacity:.65;
+  background:radial-gradient(circle at 48% 46%,#fffef4c9,transparent 35%),repeating-conic-gradient(from 24deg,#ffefc100 0deg,#fff3c755 2deg,#ffc29d00 7deg),radial-gradient(ellipse at 30% 65%,#fff0b55c,transparent 65%);
+  filter:blur(2px);box-shadow:inset 0 0 18px #ffe7c14d;
+}
+[data-theme="day"] .orb:before{
+  border-color:#ffe2cba6;
+  background:conic-gradient(from 40deg,transparent,#f7a9d580,transparent,#ffe4a78c,transparent);
+  box-shadow:0 0 22px #ffc7d059;filter:blur(1px);
+}
+[data-theme="day"] .orb:after{
+  border-color:#f8c5e870;
+  background:conic-gradient(from 140deg,#efb1e33d,transparent,#ffd8a366,transparent,#e6ade94d);
+  box-shadow:0 0 28px #efaed94d;filter:blur(2px);
+}

@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+.emma-native-token
+key.txt
+node_modules/
+.DS_Store
+*.log

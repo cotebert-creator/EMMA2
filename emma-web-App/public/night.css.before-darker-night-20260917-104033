@@ -1,0 +1,133 @@
+/* Soft flowing Emma, in both palettes. Audio still controls the parent scale. */
+.orb{border:0;background:radial-gradient(ellipse at 45% 42%,#fff0cbb0 0%,#fbc2a488 35%,#eaa0c04a 62%,#eaa0c000 75%);box-shadow:0 0 48px #ffcbaa55,inset 0 0 36px #ffdfbe33;border-radius:47% 53% 49% 51%;}
+.orb-core{inset:-2%;opacity:.55;background:radial-gradient(ellipse at 32% 35%,#ffe9c28c,transparent 60%),conic-gradient(from 0deg,transparent,#f4b6d570,transparent,#ffdab75e,transparent);filter:blur(8px);box-shadow:none;border-radius:45% 55% 60% 40% / 55% 43% 57% 45%;animation:soft-flow 17s ease-in-out infinite alternate;}
+.orb:before{inset:-13%;border-color:#ffd8dc55;background:conic-gradient(from 40deg,transparent,#f2b5d65c,transparent,#ffdda255,transparent);filter:blur(2px);box-shadow:0 0 24px #f8b5ce33;animation:soft-flow 23s ease-in-out infinite alternate;}
+.orb:after{inset:-25%;border-color:#f5c7eb40;filter:blur(3px);box-shadow:0 0 25px #eab3d833;animation:soft-flow 29s ease-in-out infinite alternate-reverse;}
+@keyframes soft-flow{0%{rotate:-15deg;border-radius:44% 56% 60% 40% / 48% 42% 58% 52%;transform:scale(.97)}50%{border-radius:58% 42% 48% 52% / 43% 58% 42% 57%}100%{rotate:35deg;border-radius:48% 52% 41% 59% / 58% 46% 54% 42%;transform:scale(1.06)}}
+.cloud-layer{inset:-16%;animation:visible-cloud-drift 48s ease-in-out -12s infinite alternate;}
+.cloud-veil{background-image:url('/assets/emma-clouds.png');background-size:cover;background-position:65% 55%;opacity:.16;mix-blend-mode:screen;mask-image:linear-gradient(transparent 5%,#0008 45%,#000 90%);animation:near-cloud-drift 65s ease-in-out -24s infinite alternate;}
+@keyframes visible-cloud-drift{from{transform:translate(-4%,1%) scale(1.02)}to{transform:translate(4%,-3%) scale(1.08)}}
+@keyframes near-cloud-drift{from{transform:translate(5%,2%) scale(1.09)}to{transform:translate(-5%,-2%) scale(1.02)}}
+.theme-button{background:#ffffff10;border:1px solid #ffffff50;border-radius:24px;color:inherit;padding:8px 14px;min-height:44px;margin-right:12px;font-size:13px;backdrop-filter:blur(10px)}
+:root[data-theme="night"]{color-scheme:dark;--card:#15223be8;--ink:#d0d9e9;--muted:#aab9cf;--line:#b0c7ee26;--accent:#9eafcb;--shadow:0 18px 55px #0003;}
+[data-theme="night"] body{background:#0b1428;color:#ced8e9}
+[data-theme="night"] .sky{background:#0b1428}
+[data-theme="night"] .cloud-layer,[data-theme="night"] .cloud-veil{background-image:url('/assets/emma-night-clouds.png')}
+[data-theme="night"] .sky:after{background:linear-gradient(#070e2033,#07102422 40%,#07102066)}
+[data-theme="night"] #voiceHint,[data-theme="night"] .emma-subtitle,[data-theme="night"] .listening-label,[data-theme="night"] .hero .muted,[data-theme="night"] .hero .ghost{color:#b5c3d9;text-shadow:none}
+[data-theme="night"] .patient-wave{filter:drop-shadow(0 0 4px #9caee755)}[data-theme="night"] .patient-wave path{stroke:#b4c9e4}[data-theme="night"] .patient-wave path:nth-child(2){stroke:#8d9fc7}[data-theme="night"] .patient-wave path:nth-child(3){stroke:#a2a7d1}
+[data-theme="night"] .conversation-controls button,[data-theme="night"] .conversation-controls #talkToggle,[data-theme="night"] .settings-button,[data-theme="night"] .theme-button{background:#23355366;border-color:#8a9dbf55;color:#c7d3e5}
+[data-theme="night"] .hero .pill{color:#b5c4dc;background:#23355266}
+[data-theme="night"] .care-drawer{background:#0e1a2e;color:#ced8e9}[data-theme="night"] .care-drawer .card{background:#15223b;border-color:#a8bbd91a}
+[data-theme="night"] .care-drawer .muted,[data-theme="night"] .care-drawer .ghost{color:#aab9cf}
+[data-theme="night"] .care-drawer .credit-details,[data-theme="night"] .loop,[data-theme="night"] .memory-item,[data-theme="night"] pre{background:#1a2a43;color:#c5d0e3}
+[data-theme="night"] .care-drawer .tabs{background:#18253a}[data-theme="night"] .tab.active{background:#2b3b54;color:#d4ddec}
+[data-theme="night"] input,[data-theme="night"] #journeySearch,[data-theme="night"] .backup-panel input,[data-theme="night"] .hero .type-box input{background:#17253c;color:#d2dbeb;border-color:#7f96b64d}
+[data-theme="night"] .primary,[data-theme="night"] .secondary{background:#354b6d;color:#dce3ef}
+[data-theme="night"] .notice,[data-theme="night"] .hero .notice{background:#1b2c46;border-color:#839fc655;color:#cdd8e9}
+[data-theme="night"] .care-drawer a{color:#a9c4e7}[data-theme="night"] footer{color:#99aac3}
+@media(prefers-reduced-motion:reduce){.cloud-layer,.cloud-veil,.orb-core,.orb:before,.orb:after{animation:none!important}}
+.low-energy .orb-core{animation:none}
+
+/* Shared Emma orb: the same golden core, rose aura, and rings in both themes. */
+:is([data-theme="day"], [data-theme="night"]) .orb{
+  border:0;
+  border-radius:50%;
+  background:radial-gradient(ellipse closest-side at 46% 43%,#fff9da 0%,#ffe8adf2 24%,#ffd091bd 48%,#f2b29d66 70%,#edabc11a 88%,#edabc100 100%);
+  box-shadow:none;
+  filter:blur(3px) drop-shadow(0 0 20px #ffdcad66);
+}
+:is([data-theme="day"], [data-theme="night"]) .orb-core{
+  inset:7%;border-radius:50%;opacity:.65;
+  background:radial-gradient(circle at 48% 46%,#fffef4c9,transparent 35%),repeating-conic-gradient(from 24deg,#ffefc100 0deg,#fff3c755 2deg,#ffc29d00 7deg),radial-gradient(ellipse at 30% 65%,#fff0b55c,transparent 65%);
+  filter:blur(8px);box-shadow:none;
+}
+:is([data-theme="day"], [data-theme="night"]) .orb:before{
+  border-color:transparent;
+  background:conic-gradient(from 40deg,transparent,#f7a9d580,transparent,#ffe4a78c,transparent);
+  box-shadow:0 0 22px #ffc7d040;filter:blur(4px);
+}
+:is([data-theme="day"], [data-theme="night"]) .orb:after{
+  border-color:transparent;
+  background:conic-gradient(from 140deg,#efb1e33d,transparent,#ffd8a366,transparent,#e6ade94d);
+  box-shadow:0 0 28px #efaed933;filter:blur(5px);
+}
+
+/* A separate light ring stays legible around the blurred core. It belongs to
+   the button, so the voice-driven scale carries both the orb and its outline. */
+.orb .light-ring{position:absolute;inset:-9%;border:1.5px solid #ffe7b6cc;border-radius:48% 52% 51% 49% / 52% 47% 53% 48%;pointer-events:none;box-shadow:0 0 7px #fff1bd99,inset 0 0 6px #ffdbad66;animation:light-wave 12s ease-in-out infinite alternate;}
+.orb .light-ring:after{content:'';position:absolute;inset:-5%;border:1px solid #ffd1e68c;border-radius:52% 48% 46% 54% / 47% 54% 46% 53%;box-shadow:0 0 7px #ffcad966;animation:light-wave 17s ease-in-out infinite alternate-reverse;}
+@keyframes light-wave{0%{rotate:-12deg;transform:scale(.98);border-radius:48% 52% 51% 49% / 52% 47% 53% 48%}50%{border-radius:52% 48% 47% 53% / 48% 54% 46% 52%}100%{rotate:18deg;transform:scale(1.025);border-radius:49% 51% 53% 47% / 54% 48% 52% 46%}}
+/* Keep the ring crisp enough to see; blur the core rather than the button. */
+:is([data-theme="day"], [data-theme="night"]) .orb{filter:drop-shadow(0 0 20px #ffdcad66)}
+
+/* A cooler night palette, with the same feathering and motion as daytime. */
+[data-theme="night"] .orb{
+  background:radial-gradient(ellipse closest-side at 46% 43%,#e3efff 0%,#c8defbf2 24%,#9cbfeaBD 48%,#a3b1da66 70%,#b4a9df1a 88%,#b4a9df00 100%);
+  filter:drop-shadow(0 0 20px #a9c7ed66);
+}
+[data-theme="night"] .orb-core{
+  background:radial-gradient(circle at 48% 46%,#f0f6ffc9,transparent 35%),repeating-conic-gradient(from 24deg,#cee5ff00 0deg,#deedff55 2deg,#a2c0ee00 7deg),radial-gradient(ellipse at 30% 65%,#c0d8fa5c,transparent 65%);
+}
+[data-theme="night"] .orb:before{
+  background:conic-gradient(from 40deg,transparent,#aabbe980,transparent,#c8e0fa8c,transparent);
+  box-shadow:0 0 22px #b4c9ed40;
+}
+[data-theme="night"] .orb:after{
+  background:conic-gradient(from 140deg,#bdb4ec3d,transparent,#afd4f566,transparent,#b4bfee4d);
+  box-shadow:0 0 28px #b4bfee33;
+}
+[data-theme="night"] .orb .light-ring{border-color:#d3e6ffcc;box-shadow:0 0 7px #d9ebff99,inset 0 0 6px #bad6f766}
+[data-theme="night"] .orb .light-ring:after{border-color:#c6ceef8c;box-shadow:0 0 7px #c2d4f266}
+
+/* Three depth planes: distant sky, mid-distance cloud forms, near mist. */
+.cloud-layer{inset:-18%;animation:parallax-far 85s ease-in-out -20s infinite alternate;}
+.cloud-veil{inset:-22%;opacity:.24;background-position:25% 65%;background-size:auto 125%;mask-image:linear-gradient(transparent 10%,#0008 55%,#000 100%);animation:parallax-middle 52s ease-in-out -15s infinite alternate;will-change:transform;}
+.cloud-near{position:absolute;inset:-25%;background:url('/assets/emma-clouds.png') 80% 90%/cover no-repeat;opacity:.17;mix-blend-mode:screen;mask-image:linear-gradient(transparent 45%,#000a 80%,#000);filter:blur(3px);animation:parallax-near 36s ease-in-out -10s infinite alternate;will-change:transform;}
+[data-theme="night"] .cloud-near{background-image:url('/assets/emma-night-clouds.png');opacity:.14}
+@keyframes parallax-far{from{transform:translate(-2%,1%) scale(1.02)}to{transform:translate(2%,-1%) scale(1.05)}}
+@keyframes parallax-middle{from{transform:translate(5%,2%) scale(1.06)}to{transform:translate(-5%,-2%) scale(1.1)}}
+@keyframes parallax-near{from{transform:translate(-7%,3%) scale(1.12)}to{transform:translate(7%,-3%) scale(1.06)}}
+@media(prefers-reduced-motion:reduce){.cloud-near,.orb .light-ring,.orb .light-ring:after{animation:none!important}}
+.low-energy .orb .light-ring,.low-energy .orb .light-ring:after{animation:none}
+
+/* Abstract sky: retain the original palette, dissolve cloud detail, and let
+   broad color fields drift independently. Overscan keeps blurred edges hidden. */
+.sky .cloud-layer{
+  inset:-24%;
+  filter:blur(clamp(48px,8vw,110px)) saturate(1.15);
+  opacity:.85;
+  animation:abstract-distance 42s ease-in-out -18s infinite alternate;
+}
+.sky .cloud-veil{
+  inset:-25%;opacity:.72;mask-image:none;mix-blend-mode:normal;
+  background:radial-gradient(ellipse at 18% 25%,#c685becc,transparent 42%),radial-gradient(ellipse at 78% 65%,#f4bb83cc,transparent 43%),radial-gradient(ellipse at 48% 85%,#d57f9b99,transparent 38%);
+  filter:blur(clamp(40px,6vw,85px));
+  animation:abstract-wash 24s ease-in-out -12s infinite alternate;
+}
+.sky .cloud-near{
+  inset:-25%;opacity:.65;mask-image:none;mix-blend-mode:normal;
+  background:radial-gradient(ellipse at 20% 75%,#7966b8cc,transparent 42%),radial-gradient(ellipse at 82% 20%,#cc94d3bb,transparent 40%),radial-gradient(ellipse at 38% 40%,#f2ca9c80,transparent 35%);
+  filter:blur(clamp(40px,6vw,85px));
+  animation:abstract-wash 31s ease-in-out -21s infinite alternate-reverse;
+}
+[data-theme="night"] .sky .cloud-layer{opacity:.7;filter:blur(clamp(48px,8vw,110px)) saturate(.95)}
+/* Distinct, feathered pools of moonlight travel on independent depth planes. */
+[data-theme="night"] .sky .cloud-veil{
+  opacity:.82;
+  background:radial-gradient(ellipse 30% 27% at 32% 32%,#a6b8ded9,transparent 100%),radial-gradient(ellipse 30% 35% at 70% 62%,#778bcee0,transparent 100%),radial-gradient(ellipse 27% 28% at 40% 78%,#a181bdc7,transparent 100%);
+  filter:blur(clamp(30px,4vw,65px));
+  animation:moonlight-drift 32s ease-in-out -11s infinite alternate;
+}
+[data-theme="night"] .sky .cloud-near{
+  opacity:.72;
+  background:radial-gradient(ellipse 25% 30% at 28% 64%,#8078c5cc,transparent 100%),radial-gradient(ellipse 28% 27% at 68% 30%,#7db4c6cc,transparent 100%),radial-gradient(ellipse 24% 25% at 55% 52%,#b3b8dba6,transparent 100%);
+  filter:blur(clamp(32px,4vw,65px));
+  animation:moonlight-drift 43s ease-in-out -26s infinite alternate-reverse;
+}
+@keyframes moonlight-drift{0%{transform:translate(-12%,6%) scale(1.03) rotate(-6deg)}50%{transform:translate(1%,-7%) scale(1.09) rotate(1deg)}100%{transform:translate(12%,4%) scale(1.04) rotate(6deg)}}
+@keyframes abstract-distance{from{transform:translate(-5%,3%) scale(1.04)}to{transform:translate(5%,-3%) scale(1.1)}}
+@keyframes abstract-wash{0%{transform:translate(-10%,5%) scale(1.04) rotate(-5deg)}50%{transform:translate(0,-5%) scale(1.12) rotate(0deg)}100%{transform:translate(10%,3%) scale(1.08) rotate(5deg)}}
+
+.typed-feedback{width:min(520px,100%);padding:12px 16px;border-radius:14px;background:#382341d9;color:#fff4ef;text-align:left;font-size:15px;line-height:1.5;margin:10px 0;overflow-wrap:anywhere}
+[data-theme="night"] .typed-feedback{background:#17263de8;color:#ced9ea}

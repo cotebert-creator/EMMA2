@@ -1,0 +1,165 @@
+// Explicit patient instructions are handled on the device. These rules never infer
+// enduring personality from symptoms, mood, or a single difficult day.
+export function isLowEnergy(state, now = Date.now()) {
+  return state.interaction?.mode === 'low' && state.interaction.expiresAt > now;
+}
+
+// Only unconditional answer-length instructions share this slot. Other
+// preferences (including contextual ones) must not silently replace each other.
+function answerStyle(value) {
+  const clean=value.trim().replace(/[.!]+$/,'');
+  return /^(?:I (?:prefer|like|want) (?:(?:your|my) )?(?:short|brief|concise|detailed|long|longer|shorter)(?: and (?:simple|clear))? (?:answers|responses|replies|explanations)|(?:please )?(?:keep (?:your|the) (?:answers|responses|replies|explanations) (?:short|brief|concise|detailed)|give me (?:short|brief|concise|detailed) (?:answers|responses|replies|explanations)))$/i.test(clean);
+}
+
+function personalMemory(text) {
+  const value=text.replace(/^(?:please )?remember (?:that )?/i,'').replace(/[.!]+$/,'').trim();
+  // Preserve the patient's words; do not guess names, relationships, or clinical facts.
+  if(/[?]|\b(?:maybe|might|perhaps|not|never|doesn't|don't|didn't|would|could|should|today|tonight|tomorrow|yesterday|right now|for now)\b/i.test(value))return null;
+  if(/^my (?:daughter|son|wife|husband|partner|spouse|sister|brother|mother|father|friend|caregiver|neighbour|neighbor|granddaughter|grandson)\b\s+.+/i.test(value))return {value,category:'person'};
+  if(/^(?:I (?:feel comforted by|find .+ (?:comforting|calming|soothing))|it helps me when .+|(?:listening to .+|reading .+|.+ music) (?:helps me relax|calms me|comforts me))$/i.test(value)
+    || /^I feel comforted by\s+.+/i.test(value))return {value,category:'comfort'};
+  if(/^I (?:usually|normally|always) (?:walk|read|listen|rest|nap|wake up|go to bed|have breakfast|have lunch|have dinner|eat breakfast|eat lunch|eat dinner|drink tea|drink coffee)\b.+/i.test(value))return {value,category:'routine'};
+  return null;
+}
+
+function directMemoryAnswer(value) {
+  // Change only the presentation, not the stored patient report. Quoted words
+  // retain their speaker's original pronouns.
+  const answer=value.split(/("[^"]*"|“[^”]*”)/g).map((part,index)=>index%2?part:part
+    .replace(/\bI(?:'m|’m| am)\b/gi,'you are')
+    .replace(/\bI(?:'ve|’ve)\b/gi,'you have')
+    .replace(/\bI(?:'ll|’ll)\b/gi,'you will')
+    .replace(/\bI was\b/gi,'you were')
+    .replace(/\bmyself\b/gi,'yourself').replace(/\bmine\b/gi,'yours')
+    .replace(/\bmy\b/gi,'your').replace(/\b(?:I|me)\b/g,'you'))
+    .join('').replace(/[.!]+$/,'');
+  return answer.charAt(0).toUpperCase()+answer.slice(1)+'.';
+}
+
+function personalRecall(state, query, now) {
+  let category=null,terms=[];
+  if(/^(?:who (?:usually )?(?:takes|drives|brings) me to (?:my )?appointments|who helps me (?:get to|with) (?:my )?appointments)$/i.test(query)){category='person';terms=['appointments'];}
+  else if(/^(?:what (?:helps me (?:relax|feel better)|comforts me|calms me)|what do I find (?:comforting|calming)|what makes me feel (?:calm|better))$/i.test(query))category='comfort';
+  else if(/^(?:what (?:are|is) my (?:usual )?routines?|what do I usually do)$/i.test(query))category='routine';
+  else {
+    const topic=query.match(/^(?:what (?:do you remember|do you know|have I told you) about|who is) (?:my )?(.+)$/i)?.[1];
+    if(!topic)return null;
+    terms=topic.toLowerCase().match(/[\p{L}\p{N}]+/gu)||[];
+    if(!terms.length)return null;
+  }
+  const matches=state.memories.filter(m=>['person','routine','comfort'].includes(m.category)&&m.visibility!=='private'&&(!category||m.category===category)&&terms.every(t=>(m.value.toLowerCase().match(/[\p{L}\p{N}]+/gu)||[]).includes(t)));
+  // Do not turn general questions such as "Who is Mozart?" into memory queries.
+  if(!category&&!matches.length&&!/\b(?:remember|told you|my daughter|my son|my wife|my husband|my partner|my friend|my caregiver|my routine)\b/i.test(query))return null;
+  const limit=isLowEnergy(state,now)?1:3;
+  return matches.length?matches.slice(0,limit).map(m=>directMemoryAnswer(m.value)).join(' ')+(matches.length>limit?' I have more saved about that, too.':''):'I don’t have that saved yet. You can tell me what you’d like me to remember.';
+}
+
+export function companionTurn(state, text, source = 'typed', now = Date.now()) {
+  const clean = text.trim().replace(/[’]/g, "'").replace(/^Emma[,!:.]?\s+/i,'');
+  const at = new Date(now).toISOString();
+  const recall=clean.replace(/^Emma[, ]+/i,'').replace(/[?!.]+$/,'').trim();
+  const explanationRecall=/^(?:how do I (?:prefer|like|want) you to (?:explain(?: things)?|(?:answer|respond)(?: to me)?)|(?:do you remember |what (?:is|was) )my preference (?:about|for) (?:answers|responses|explanations)|what (?:kind|type) of (?:answers|responses|explanations) do I (?:prefer|like))$/i.test(recall);
+  const allPreferences=/^(?:what (?:do you remember|do you know) about my preferences|what are my (?:saved )?preferences)$/i.test(recall);
+  const allMemory=/^(?:what (?:do you remember|do you know|have you remembered) about me|what have you saved about me)$/i.test(recall);
+  if(explanationRecall||allPreferences||allMemory){
+    state.memoryPending=null;
+    const memories=state.memories.filter(m=>(allMemory||m.category==='preference')&&m.visibility!=='private'&&(!explanationRecall||/\b(?:answers?|responses?|replies|explanations?|explain|detail(?:ed)?|brief|concise)\b/i.test(m.value)));
+    if(allMemory)return {handled:true,message:memories.length?'Here’s what is saved about you: '+memories.map(m=>m.value.replace(/[.!]+$/,'')+'.').join(' '):'I don’t have any shareable personal memories saved here yet.'};
+    return {handled:true,message:memories.length?memories.map(m=>directMemoryAnswer(m.value)).join(' '):'I don’t have a confirmed '+(explanationRecall?'answer-style preference':'preference')+' saved here yet. Would you like to tell me what you prefer?'};
+  }
+  const personalReply=personalRecall(state,recall,now);
+  if(personalReply){state.memoryPending=null;return {handled:true,message:personalReply};}
+  const pending = state.memoryPending;
+  if (pending && now - pending.at > 120000) state.memoryPending = null;
+  if (state.memoryPending && /^(?:yes|yes please|yes exactly|that's right|that is right|correct|absolutely|go ahead|do it|remember that|save it)[.!]*$/i.test(clean)) {
+    const p = state.memoryPending;
+    if(p.replace){
+      const current=state.memories.filter(m=>m.category==='preference'&&m.visibility!=='private'&&answerStyle(m.value));
+      if(JSON.stringify(current.map(m=>({id:m.id,value:m.value})))!==JSON.stringify(p.replace)){
+        state.memoryPending=null;
+        return {handled:true,message:'That preference changed while we were talking. Please tell me again what you’d like me to remember.'};
+      }
+      const record=current[0];
+      record.history=[...(record.history||[]),...current.map(m=>({value:m.value,source:m.source,original:m.original,at:m.updatedAt||m.createdAt}))];
+      Object.assign(record,{value:p.value,source:p.source,original:p.original,provenance:'patient_report',confidence:1,confirmedAt:at,updatedAt:at});
+      state.memories=state.memories.filter(m=>!p.replace.some(r=>r.id===m.id)||m.id===record.id);
+      state.memoryPending=null;
+      return {handled:true,message:'Got it. I’ve updated your answer preference.'};
+    }
+    const duplicate = state.memories.find(m => m.value.toLowerCase() === p.value.toLowerCase() && m.visibility === p.visibility);
+    if (!duplicate) state.memories.push({id:crypto.randomUUID(), category:p.category, value:p.value,
+      source:p.source, original:p.original, provenance:'patient_report', confidence:1,
+      persistence:'until_forgotten', visibility:p.visibility, confirmedAt:at, createdAt:at});
+    state.memoryPending = null;
+    return {handled:true, message:p.visibility === 'private' ? 'Remembered on this device. I’ll leave it out of future AI context.' : 'I’ll remember that.'};
+  }
+  if (state.memoryPending && /^(?:no|no thanks|cancel|don't save (?:it|that)|forget it)[.!]*$/i.test(clean)) {
+    state.memoryPending = null;
+    return {handled:true,message:'All right. I haven’t saved that memory.'};
+  }
+  if (/^(?:Emma[, ]+)?(?:I(?:'m| am) (?:wiped out|exhausted|very tired|too tired)(?: today)?|I don't want to talk much(?: today)?|(?:please )?(?:keep it short|use low energy mode))[.!]*$/i.test(clean)) {
+    state.interaction = {mode:'low',reportedAt:at,expiresAt:now + 12*60*60*1000,source,original:text};
+    return {handled:true,message:'I’m here. I’ll keep things short and gentle for now.'};
+  }
+  if (/^(?:I(?:'m| am) feeling better|(?:turn off|leave|exit) low energy mode|back to normal(?: mode)?)[.!]*$/i.test(clean)) {
+    state.interaction = {mode:'usual',reportedAt:at,source};
+    return {handled:true,message:'All right. We can take things at your usual pace.'};
+  }
+  // Health changes and tasks belong in their own records, not permanent personal memory.
+  const privateMatch = clean.match(/^(?:this stays between us[:.,]?|remember privately[:.,]?)\s+(.+?)[.!]?$/i);
+  const personal=personalMemory(clean);
+  const preference = clean.match(/^(?:please )?remember (?:that )?((?:I prefer|I like|I find|I feel comforted by|it helps me when)\b.+?)[.!]?$/i)
+    || (!/[?]|\b(?:maybe|might|perhaps|today|tonight|right now|for now|this morning|this evening)\b/i.test(clean)&&clean.match(/^((?:I prefer|I feel comforted by|it helps me when)\b.+?)[.!]?$/i))
+    || (answerStyle(clean)?[clean,clean.replace(/[.!]+$/,'')]:null);
+  if (privateMatch || preference || personal) {
+    if (state.medicationPending) return {handled:true,message:'Let’s finish or cancel the medication question first, so I don’t mix up the confirmations.'};
+    const value = privateMatch?privateMatch[1]:personal?personal.value:preference[1];
+    if (value.length > 600) return {handled:true,message:'Could you give me the short version you’d like me to remember?'};
+    const category=privateMatch?'private':personal?personal.category:'preference';
+    const visibility=privateMatch?'private':'companion';
+    if(state.memories.some(m=>m.category===category&&m.visibility===visibility&&m.value.toLowerCase()===value.toLowerCase())){
+      state.memoryPending=null;return {handled:true,message:'That’s already saved'+(category==='preference'?' as your answer preference':'')+'.'};
+    }
+    state.memoryPending = {value,category,visibility,source,original:text,at:now};
+    if(!privateMatch&&answerStyle(value)){
+      const existing=state.memories.filter(m=>m.category==='preference'&&m.visibility!=='private'&&answerStyle(m.value));
+      if(existing.length===1&&existing[0].value.toLowerCase()===value.toLowerCase()){
+        state.memoryPending=null;return {handled:true,message:'That’s already saved as your answer preference.'};
+      }
+      if(existing.length){
+        state.memoryPending.replace=existing.map(m=>({id:m.id,value:m.value}));
+        // Include legacy records with no visibility in the same companion scope.
+        state.memoryPending.visibility='companion';
+        return {handled:true,message:'Replace your saved answer preference'+(existing.length>1?'s':'')+' with “'+value+'”?'};
+      }
+    }
+    return {handled:true,message:privateMatch ? 'Keep this as a local private memory? It won’t be added to future AI context. If you said it aloud, the voice service has already received the audio.' : 'Would you like me to remember: “'+value+'”?'};
+  }
+  if (/^(?:Emma[, ]+)?(?:am I forgetting anything|what(?:'s| is) (?:still )?(?:outstanding|waiting)|what are my open loops)[?!.]*$/i.test(clean)) {
+    const loops = state.openLoops.filter(l=>l.status!=='closed' && l.mergedInto===undefined);
+    const limit = isLowEnergy(state,now) ? 1 : 3;
+    return {handled:true,message:loops.length ? 'Here’s what’s still recorded as waiting: '+loops.slice(0,limit).map(l=>l.text).join(' ') + (loops.length>limit?' There '+(loops.length-limit===1?'is one more item.':'are '+(loops.length-limit)+' more items.'):'') : 'There’s nothing open in the items we’ve recorded.'};
+  }
+  // A topic change cannot accidentally confirm an older personal memory later.
+  state.memoryPending = null;
+  return {handled:false};
+}
+
+export function contextPacket(state, now = Date.now()) {
+  return {
+    patientName:state.patient.preferredName || null,
+    appointments:(state.appointments||[]).filter(a=>a.status!=='cancelled'&&Date.parse(a.startsAt)>=now).sort((a,b)=>a.startsAt.localeCompare(b.startsAt)).slice(0,5).map(a=>({with:a.with,startsAt:a.startsAt,timeZone:a.timeZone,provenance:'patient_report'})),
+    interaction:isLowEnergy(state,now) ? 'Low energy for now: one short sentence when possible. Ask only an essential question. Do not infer a lasting preference.' : 'Usual pace: warm, concise; at most one useful question.',
+    confirmedPreferences:state.memories.filter(m=>m.category==='preference'&&m.visibility!=='private').map(m=>({value:m.value,provenance:m.provenance||'patient_report'})),
+    personalMemories:state.memories.filter(m=>['person','routine','comfort'].includes(m.category)&&m.visibility!=='private').map(m=>({category:m.category,value:m.value,provenance:m.provenance||'patient_report'})),
+    memories:state.memories.filter(m=>m.visibility!=='private').slice(-20).map(m=>({value:m.value,provenance:m.provenance||'legacy patient record',confidence:m.confidence})),
+    medications:state.medications.filter(m=>!m.archivedInto).map(m=>({name:m.name,aliases:m.aliases,provenance:'patient-confirmed name; not a prescription'})),
+    recentJourney:state.events.filter(e=>e.visibility!=='private').slice(0,12).map(e=>({at:e.at,type:e.type,summary:e.summary,data:e.data,provenance:e.data?.provenance||'patient_report'})),
+    openLoops:state.openLoops.filter(l=>l.status!=='closed'&&l.mergedInto===undefined&&l.visibility!=='private').map(l=>({text:l.text,createdAt:l.createdAt}))
+  };
+}
+
+export function searchJourney(events, query = '') {
+  const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  return events.filter(e=>terms.every(t=>[e.summary,e.type,e.data?.medicationName,e.at].join(' ').toLowerCase().includes(t)));
+}

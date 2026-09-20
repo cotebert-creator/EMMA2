@@ -1,0 +1,8 @@
+try{
+  await import('./app.js?v=memory-routing-2');
+}catch{
+  const warning=document.getElementById('storageWarning');
+  warning.textContent='Emma couldn’t finish loading. Your saved records have not been reset. Please reload this page. If this continues, tell us you see this loading message.';
+  warning.classList.remove('hidden');
+  for(const id of ['sendText','talkToggle','talkBtn'])document.getElementById(id).disabled=true;
+}

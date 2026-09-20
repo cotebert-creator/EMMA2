@@ -1,0 +1,87 @@
+// Correction proposals are session-only. No change occurs until a current,
+// unambiguous proposal is confirmed against the same record contents.
+export function createCorrections(){
+  let pending=null;
+  const normalize=s=>s.toLowerCase().replace(/[’]/g,"'").replace(/[^\p{L}\p{N} ]/gu,' ').replace(/\b(?:answers?|responses?|replies|reply|explanations?)\b/g,'answer').replace(/\s+/g,' ').trim();
+  function candidates(state,kind,query){
+    const records=kind==='loop'?state.openLoops.filter(x=>x.status!=='closed'&&!x.mergedInto):state.memories.filter(x=>kind==='personal'?['person','routine','comfort'].includes(x.category)&&x.visibility!=='private':x.category==='preference');
+    const terms=normalize(query).split(' ').filter(x=>!['the','that','my','about','preference','question','one','it','for','a','i','usually','normally','always'].includes(x));
+    return records.filter(x=>!terms.length||terms.every(t=>normalize(x.value||x.text).includes(t)));
+  }
+  function proposal(record){pending.id=record.id;pending.before=record.value||record.text;pending.visibility=record.visibility;pending.category=record.category;
+    if(pending.action==='edit'&&!pending.value){pending.stage='replacement';return 'What would you like that preference to say instead?';}
+    pending.stage='confirm';
+    return pending.action==='edit'?'Change “'+pending.before+'” to “'+pending.value+'”?':pending.action==='forget'?'Forget '+(pending.kind==='personal'?'the memory':'the preference')+' “'+pending.before+'”?':'Mark “'+pending.before+'” as handled?';
+  }
+  return {clear(){pending=null;},turn(state,text,source='typed',now=Date.now()){
+    const clean=text.trim().replace(/^[“"]|[”"]$/g,'').replace(/[’]/g,"'").replace(/^(?:Emma[,!:.]?\s+)?(?:can you |could you |would you )?(?:please[, ]+)?/i,'').replace(/[.!?\s]+$/,'');const reply=message=>({handled:true,message});
+    if(pending&&now-pending.at>120000){pending=null;if(/^(yes|correct|absolutely|that's right)[.!]*$/i.test(clean))return reply('That correction has expired. Please tell me again what you’d like to change.');}
+    if(pending&&/^(?:cancel|no|no thanks|leave it|never mind|nevermind)[.!]*$/i.test(clean)){pending=null;return reply('Of course. Nothing changed.');}
+    if(pending&&pending.stage==='confirm'&&/^(?:yes(?:[, ]+(?:please|exactly|that's right|that is right|go ahead))?|correct|absolutely|that's right|go ahead|do it)[.!]*$/i.test(clean)){
+      const p=pending;pending=null;
+      if(p.action==='create'){
+        if(state.memories.some(x=>x.category==='preference'))return reply('Your saved preferences have changed. Please tell me which one you want to update.');
+        const at=new Date(now).toISOString();
+        state.memories.push({id:crypto.randomUUID(),category:'preference',value:p.value,source:p.source,original:p.request,provenance:'patient_report',confidence:1,persistence:'until_forgotten',visibility:'companion',confirmedAt:at,createdAt:at});
+        return reply('Got it. I’ll remember that preference.');
+      }
+      const list=p.kind==='loop'?state.openLoops:state.memories;const record=list.find(x=>x.id===p.id);
+      if(!record||(record.value||record.text)!==p.before||record.visibility!==p.visibility||record.category!==p.category||(p.kind==='loop'&&record.status==='closed'))return reply('That item has changed. Please tell me which item you mean again.');
+      const at=new Date(now).toISOString();
+      if(p.action==='forget'){state.memories=state.memories.filter(x=>x.id!==p.id);return {handled:true,restart:true,message:'That '+(p.kind==='personal'?'memory':'preference')+' is forgotten. Please start a new conversation so the previous voice session no longer carries it.'};}
+      if(p.action==='edit'){
+        record.history=[...(record.history||[]),{value:record.value,source:record.source,original:record.original,at:record.updatedAt||record.createdAt}];
+        Object.assign(record,{value:p.value,updatedAt:at,confirmedAt:at,source:p.source||source,original:p.request,provenance:'patient_report',confidence:1});
+        return reply('Got it. I’ve updated that '+(p.kind==='personal'?'memory':'preference')+'.');
+      }
+      record.status='closed';record.closedAt=at;record.resolution={report:p.request,source,at};
+      state.events.unshift({id:crypto.randomUUID(),type:'open_loop_closed',summary:record.text,source,at,data:{loopId:record.id,report:p.request,provenance:'patient_report'}});
+      return reply('Got it. That question is marked as handled.');
+    }
+    if(pending?.stage==='replacement'){
+      const value=clean.replace(/^(?:change it to|make it|actually[, ]*)\s*/i,'').replace(/[.!]$/,'');
+      if(!/^(?:I prefer|I like|I find|it helps me when)\b/i.test(value)){pending=null;return reply('Nothing changed. To update a preference, try “Change my preference about answers to I prefer detailed answers.”');}
+      pending.value=value;return reply(proposal({id:pending.id,value:pending.before,visibility:pending.visibility,category:pending.category}));
+    }
+    if(pending?.stage==='select'){
+      const matches=candidates(state,pending.kind,clean).filter(m=>!pending.candidateIds||pending.candidateIds.includes(m.id));
+      if(matches.length===1)return reply(proposal(matches[0]));
+      pending=null;return reply('I couldn’t identify one item, so nothing changed. Try naming a few words from the preference or question.');
+    }
+    const forgetPersonal=clean.match(/^forget (?:what I (?:said|told you) about|(?:the |my )?memory (?:about|of))\s+(.+)$/i);
+    const stoppedRoutine=clean.match(/^I (?:don't|do not|no longer) ((?:walk|read|listen|rest|nap|wake up|go to bed|have breakfast|have lunch|have dinner|eat breakfast|eat lunch|eat dinner|drink tea|drink coffee)\b.+?)(?: anymore| any more)?$/i);
+    const changedRide=clean.match(/^actually[,.:! ]+(my (?:daughter|son|wife|husband|partner|spouse|sister|brother|mother|father|friend|caregiver|neighbour|neighbor|granddaughter|grandson)\s+.+?\s+(?:(?:usually|now) )?(?:takes|drives|brings) me to (?:my )?appointments(?: now| instead)?)$/i);
+    if(forgetPersonal||stoppedRoutine||changedRide){
+      if(state.medicationPending||state.memoryPending){pending=null;return reply('Please finish or cancel the current confirmation first, so I don’t mix up the changes.');}
+      if(/[?]|\b(?:might|maybe|perhaps|could|would|not|tomorrow|today)\b/i.test(changedRide?.[1]||''))return reply('Nothing changed. Please tell me who usually takes you to appointments now.');
+      let matches=changedRide?state.memories.filter(m=>m.category==='person'&&m.visibility!=='private'&&/\b(?:takes|drives|brings) me to (?:my )?appointments\b/i.test(m.value)):candidates(state,'personal',(forgetPersonal||stoppedRoutine)[1]);
+      if(stoppedRoutine)matches=matches.filter(m=>m.category==='routine');
+      if(!matches.length){pending=null;return reply('I couldn’t find a matching saved memory. Nothing changed.');}
+      pending={kind:'personal',action:changedRide?'edit':'forget',value:changedRide?.[1],source,request:text,at:now,stage:'select',candidateIds:matches.map(m=>m.id)};
+      if(matches.length===1)return reply(proposal(matches[0]));
+      return reply('Which memory do you mean? '+matches.map(m=>'“'+m.value+'”').join(' or '));
+    }
+    const forget=clean.match(/^(?:please )?forget (?:that |the |my )?preference(?: about)?\s*(.*?)[.!]?$/i);
+    const edit=clean.match(/^(?:please )?change (?:that |the |my )?preference(?: about)?\s*(.*?)(?: to (I prefer .+|I like .+|I find .+|it helps me when .+))?[.!]?$/i);
+    const close=clean.match(/^(?:we|I) (?:already )?handled (?:that |the |my )?question(?: about)?\s*(.*?)[.!]?$/i);
+    if(forget||edit||close){
+      if(state.medicationPending||state.memoryPending){pending=null;return reply('Please finish or cancel the current confirmation first, so I don’t mix up the changes.');}
+      const match=forget||edit||close;pending={kind:close?'loop':'memory',action:forget?'forget':close?'close':'edit',at:now,request:text,value:edit?.[2]?.replace(/[.!]$/,''),stage:'select'};
+      const matches=candidates(state,pending.kind,match[1]);
+      if(matches.length===1)return reply(proposal(matches[0]));
+      if(!matches.length){
+        if(edit?.[2]&&!state.memories.some(x=>x.category==='preference')){
+          pending.action='create';pending.source=source;pending.stage='confirm';
+          return reply('I don’t have an earlier saved preference to change. Would you like me to remember “'+pending.value+'”?');
+        }
+        if(edit&&state.memories.some(x=>x.category==='preference'))return reply('I understood the change, but couldn’t match it to one saved preference. What words did we use for the original preference?');
+        pending=null;return reply('I couldn’t find a matching saved item. Nothing changed.');
+      }
+      return reply(close?'Which question did you handle? Tell me its topic.':'Which preference do you mean? Tell me a few words from it.');
+    }
+    if(/^(?:actually[, ]*)?(?:that's not what I meant|that is not what I meant|change that|forget that)[.!]*$/i.test(clean)){
+      pending=null;return reply('What would you like to correct—a preference or a question? For example, “Change my preference about answers.”');
+    }
+    pending=null;return {handled:false};
+  }};
+}
